@@ -98,6 +98,7 @@ func runCLI() {
         Flag("quiet", flag: "q", description: "Turn off any logging, only emmit errors."),
         Flag("prune", flag: "p", description: "Remove empty generated files"),
         Flag("serialParse", description: "Parses the specified sources in serial, rather than in parallel (the default), which can address stability issues in SwiftSyntax."),
+        Flag("ignoreConfig", description: "Ignores Sourcery configuration files in favour of using command line args."),
         VariadicOption<Path>("sources", description: "Path to a source swift files. File or Directory."),
         VariadicOption<Path>("exclude-sources", description: "Path to a source swift files to exclude. File or Directory."),
         VariadicOption<Path>("templates", description: "Path to templates. File or Directory."),
@@ -117,7 +118,7 @@ func runCLI() {
         Option<Path>("ejsPath", default: "", description: "Path to EJS file for JavaScript templates."),
         Option<Path>("cacheBasePath", default: "", description: "Base path to Sourcery's cache directory"),
         Option<Path>("buildPath", default: "", description: "Sets a custom build path")
-    ) { watcherEnabled, disableCache, verboseLogging, logAST, logBenchmark, parseDocumentation, quiet, prune, serialParse, sources, excludeSources, templates, excludeTemplates, output, isDryRun, configPaths, forceParse, baseIndentation, args, ejsPath, cacheBasePath, buildPath in
+    ) { watcherEnabled, disableCache, verboseLogging, logAST, logBenchmark, parseDocumentation, quiet, prune, serialParse, ignoreConfig, sources, excludeSources, templates, excludeTemplates, output, isDryRun, configPaths, forceParse, baseIndentation, args, ejsPath, cacheBasePath, buildPath in
         do {
             Log.stackMessages = isDryRun
             switch (quiet, verboseLogging) {
@@ -137,8 +138,10 @@ func runCLI() {
             let configurations = configPaths.flatMap { configPath -> [Configuration] in
                 let yamlPath: Path = configPath.isDirectory ? configPath + ".sourcery.yml" : configPath
 
-                if !yamlPath.exists {
-                    Log.info("No config file provided or it does not exist. Using command line arguments.")
+                if !yamlPath.exists || ignoreConfig {
+                    if !ignoreConfig {
+                        Log.info("No config file provided or it does not exist. Using command line arguments.")
+                    }
                     let args = args.joined(separator: ",")
                     let arguments = AnnotationsParser.parse(line: args)
                     return [
