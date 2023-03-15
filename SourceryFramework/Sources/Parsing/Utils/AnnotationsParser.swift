@@ -290,7 +290,7 @@ public struct AnnotationsParser {
     private static func searchForAnnotations(commentLine: String) -> AnnotationType {
         let comment = commentLine.trimmingPrefix("///").trimmingPrefix("//").trimmingPrefix("/**").trimmingPrefix("/*").trimmingPrefix("*").stripped()
 
-        guard comment.hasPrefix("sourcery:") else { return .annotations([:]) }
+        guard comment.hasPrefix("sourcery:") || comment.hasPrefix("snapshot-gen:") else { return .annotations([:]) }
 
         if comment.hasPrefix("sourcery:inline:") {
             return .inlineStart
@@ -311,6 +311,13 @@ public struct AnnotationsParser {
             lowerBound = commentLine.range(of: "sourcery:file:")?.upperBound
             upperBound = commentLine.indices.endIndex
             insideFileBlock = true
+        } else if comment.hasPrefix("snapshot-gen:") {
+            lowerBound = commentLine.range(of: "snapshot-gen:")?.upperBound
+            if commentLine.hasPrefix("//") || commentLine.hasPrefix("*") {
+                upperBound = commentLine.indices.endIndex
+            } else {
+                upperBound = commentLine.range(of: "*/")?.lowerBound
+            }
         } else {
             lowerBound = commentLine.range(of: "sourcery:")?.upperBound
             if commentLine.hasPrefix("//") || commentLine.hasPrefix("*") {
